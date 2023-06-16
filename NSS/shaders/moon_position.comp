@@ -1,0 +1,60 @@
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout (binding = 1, rgba32f) uniform writeonly image2D mpa_data;
+
+uniform int year;
+uniform int month;
+uniform int day;
+uniform float decimalHour;
+
+const int AU = 149598000;
+void main() {
+
+	spa_year = year;
+    spa_month = month;
+    spa_day = day;
+    spa_hour = int(decimalHour);
+    spa_minute = int(fract(decimalHour) * 60);
+    spa_second = fract(fract(decimalHour) * 60) * 60;
+    spa_timezone = 0;
+    spa_delta_ut1 = 0;
+    spa_delta_t = 66.4;
+    spa_latitude = 41.53059288992517;
+    spa_longitude = -8.43455912667597;
+    spa_elevation = 200;
+    spa_pressure = 1000;
+    spa_temperature = 11;
+    spa_atmos_refract = 0.5667;
+    spa_slope = 0;
+    spa_azm_rotation = 0;
+
+    sampa_function = SAMPA_ALL;
+
+    //call the SAMPA calculate function and pass the SAMPA structure
+
+    int result = sampa_calculate();
+
+    float moonDistance = float(mpa_cap_delta) / 10000;
+    float sunDistance = AU / 10000;
+
+    float moonAzimuth = radians(float(-mpa_azimuth_astro)) + radians(180);
+    float moonElevation = radians(float(mpa_e)) - radians(90);
+
+    float moonX = moonDistance * sin(moonAzimuth) * sin(moonElevation);
+    float moonY = moonDistance * cos(moonElevation);
+    float moonZ = moonDistance * cos(moonAzimuth) * sin(moonElevation);
+
+    float sunAzimuth = radians(float(-spa_azimuth_astro)) + radians(180);
+    float sunElevation = radians(float(spa_e)) - radians(90);
+
+    float sunX = sunDistance * sin(sunAzimuth) * sin(sunElevation);
+    float sunY = sunDistance * cos(sunElevation);
+    float sunZ = sunDistance * cos(sunAzimuth) * sin(sunElevation);
+
+    vec3 dist = normalize(vec3(sunX, sunY, sunZ) - vec3(moonX, moonY, moonZ));
+
+    imageStore(mpa_data, ivec2(0, 0), vec4(moonX, moonY, moonZ, 1.0));
+    imageStore(mpa_data, ivec2(1, 0), vec4(dist, 0.0));
+    imageStore(mpa_data, ivec2(2, 0), vec4(moonAzimuth, mpa_cap_delta, 0.0, 0.0));
+    imageStore(mpa_data, ivec2(1, 0), vec4(sunX, sunY, sunZ, 1.0));
+}

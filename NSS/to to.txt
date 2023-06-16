@@ -1,0 +1,3 @@
+- Precompute optical depth
+- Add aereal perspective to all
+- Add PCF shadows
